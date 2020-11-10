@@ -30,41 +30,42 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "be.msec.labgrpc";
-option java_outer_classname = "TutorialProto";
+option java_package = "chatroom";
+option java_outer_classname = "ChatRoomProto";
 option objc_class_prefix = "HLW";
 
 package tutorial;
 
-// De calculator service definitie
-service Calculator{
-  // Bereken een som
-  rpc calculateSum(Sum) returns (CalculatorReply) {}
+// The chatroom service definition
+service ChatRoom{
+  // Send a message
+  rpc sendMessage(Message) returns (Empty) {}
   
-  // Doe een som met onbepaalde input
-  rpc streamingSum(stream Sum) returns (CalculatorReply) {}
+  // Ask if username exists
+  rpc checkIfUserNameIsTaken(User) returns (UserTaken) {}
   
-  // Vraag de uitgevoerde berekeningen op
-  rpc calculatorHistory(Empty) returns (stream Calculation) {}
+  // Get online users
+  rpc getOnlineUsers(Empty) returns (stream User) {}
+
+  // User Going Offline
+  rpc removeOnlineUser(User) returns(Empty) {}
 }
 
-// De aanvraag voor een som
-message Sum{
-  int32 a = 1;
-  int32 b = 2;
+// A massage: containing the receiver chat name and the message itself
+message Message{
+  string chatName = 1;
+  string message = 2;
 }
 
-// Het antwoord met de oplossing in
-message CalculatorReply{
-  int32 solution = 1;
+// User containing username
+message User{
+  string name = 1;
 }
 
-// Een volledige berekening voor eenvoudige sommen
-message Calculation{
-  int32 index = 1;
-  Sum sum = 2;
-  CalculatorReply solution = 3;
+// UserTaken => True is username is taken, False if username is not taken
+message UserTaken{
+  bool taken = 1;
 }
 
-// Een leeg veld
+// an empty field
 message Empty {}
