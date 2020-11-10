@@ -99,24 +99,35 @@ public class Server {
 							}
 							break;
 						case "New User":
-
-							User newUser = message.getSender();
-
+							User sender = message.getSender();
+							System.out.println("Send new user update to everyone");
 							// Getting an iterator
 							Iterator iterator = onlineUsersObservers.entrySet().iterator();
 
 							while (iterator.hasNext()) {
 								Map.Entry entry = (Map.Entry)iterator.next();
 
-								if(entry.getKey() != newUser){
+								if(!((User)entry.getKey()).getName().equals(sender.getName())){
 									StreamObserver<Message> observer = (StreamObserver<Message>) entry.getValue();
 									observer.onNext(message);
 								}
 
 							}
-
 							break;
 						case "Remove User":
+							System.out.println("Removing user");
+							// Getting an iterator
+							Iterator iterator1 = onlineUsersObservers.entrySet().iterator();
+
+							while (iterator1.hasNext()) {
+								Map.Entry entry = (Map.Entry)iterator1.next();
+
+
+									StreamObserver<Message> observer = (StreamObserver<Message>) entry.getValue();
+									observer.onNext(message);
+
+
+							}
 							break;
 					}
 					}

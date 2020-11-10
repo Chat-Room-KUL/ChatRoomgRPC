@@ -80,6 +80,22 @@ public class Client extends Application{
 
 								}
 								break;
+							case "New User":
+								Platform.runLater(new Runnable () {
+									@Override
+									public void run() {
+										controller.addOnlineUser(message.getSender().getName());
+									}
+								});
+								break;
+							case "Remove User":
+								Platform.runLater(new Runnable () {
+									@Override
+									public void run() {
+										controller.removeOnlineUser(message.getSender().getName());
+									}
+								});
+								break;
 						}
 
 					}
@@ -236,6 +252,10 @@ public class Client extends Application{
 
 		client.initializeChat();
 
+		StreamObserver<Message> toServer = client.getStreamObserverToServer();
+		if (toServer != null) {
+			toServer.onNext(Message.newBuilder().setType("New User").setSender(User.newBuilder().setName(userName).build()).build());
+		}
 	}
 
 
