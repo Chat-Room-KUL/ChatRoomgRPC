@@ -33,7 +33,8 @@ public class Client extends Application{
 	private final ChatRoomBlockingStub blockingStub;
 	private final ChatRoomStub asyncStub;
 	private StreamObserver<Message> streamObserverToServer;
-	private static ClientController controller = null;
+	private ClientController controller = null;
+	private String userName;
 
 	public Client(){
 		channel = null;
@@ -55,6 +56,10 @@ public class Client extends Application{
 		this.controller = controller;
 	}
 
+	public void setUserName(String userName){
+		this.userName = userName;
+	}
+
 	public void shutdown() throws InterruptedException {
 		channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
 	}
@@ -66,6 +71,7 @@ public class Client extends Application{
 					@Override
 					public void onNext(Message message) {
 						//When a message from the server arrives this method is called
+						System.out.println("Bericht ontvangen");
 						switch (message.getType()) {
 							case "Message":
 								if (message.getReceiver().getName().equals("GroupChat")) {
@@ -77,7 +83,26 @@ public class Client extends Application{
 									});
 
 								}else{
+									System.out.println("Bericht ontvangen voor private chat");
+									Platform.runLater(new Runnable () {
+										@Override
+										public void run() {
 
+											User receiver = message.getReceiver();
+											User sender = message.getSender();
+
+											if(receiver.getName().equals(sender.getName())){
+												controller.addMessageToChatRoom(message.getReceiver().getName(), message.getSender().getName() + ": " + message.getMessage());
+											}else {
+												if (message.getSender().getName().equals(userName)) {
+													controller.addMessageToChatRoom(message.getReceiver().getName(), message.getSender().getName() + ": " + message.getMessage());
+												} else{
+													controller.addMessageToChatRoom(message.getSender().getName(), message.getSender().getName() + ": " + message.getMessage());
+												}
+
+											}
+										}
+									});
 								}
 								break;
 							case "New User":
@@ -237,6 +262,8 @@ public class Client extends Application{
 				}
 			}
 		}
+
+		client.setUserName(userName);
 
 		//asking the online users and receiving online users
 		OnlineUsersList onlineUsersList = new OnlineUsersList();

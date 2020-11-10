@@ -77,14 +77,12 @@ public class ClientController implements Observer {
 
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageInput.getText();
-        if(!currentActiveChatRoom.equals(username)){
-            System.out.println("Hier berivicht sturen.");
-            StreamObserver<Message> toServer = client.getStreamObserverToServer();
-            if (toServer != null) {
-                System.out.println("Hier toServer bestaat blijkbaar");
-                toServer.onNext(Message.newBuilder().setType("Message").setReceiver(User.newBuilder().setName(currentActiveChatRoom).build()).setSender(User.newBuilder().setName(username).build()).setMessage(message).build());
-            }
+
+        StreamObserver<Message> toServer = client.getStreamObserverToServer();
+        if (toServer != null) {
+            toServer.onNext(Message.newBuilder().setType("Message").setReceiver(User.newBuilder().setName(currentActiveChatRoom).build()).setSender(User.newBuilder().setName(username).build()).setMessage(message).build());
         }
+
     }
 
     public void deleteMyUsername() throws InterruptedException {

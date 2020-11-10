@@ -93,9 +93,20 @@ public class Server {
 									observer.onNext(message);								}
 
 							}else{
+
 								User receiver = message.getReceiver();
-								StreamObserver<Message> observer = onlineUsersObservers.get(receiver);
-								observer.onNext(message);
+								User sender = message.getSender();
+
+								if(receiver.getName().equals(sender.getName())){
+									StreamObserver<Message> observerReceiver = onlineUsersObservers.get(receiver);
+									observerReceiver.onNext(message);
+								}else{
+									StreamObserver<Message> observerReceiver = onlineUsersObservers.get(receiver);
+									observerReceiver.onNext(message);
+
+									StreamObserver<Message> observerSender = onlineUsersObservers.get(sender);
+									observerSender.onNext(message);
+								}
 							}
 							break;
 						case "New User":
@@ -125,7 +136,6 @@ public class Server {
 
 									StreamObserver<Message> observer = (StreamObserver<Message>) entry.getValue();
 									observer.onNext(message);
-
 
 							}
 							break;
