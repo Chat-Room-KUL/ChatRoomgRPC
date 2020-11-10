@@ -92,7 +92,7 @@ public class ClientController implements Observer {
         if (toServer != null) {
             toServer.onNext(Message.newBuilder().setType("Remove User").setSender(User.newBuilder().setName(username).build()).build());
         }
-        client.shutdown();
+        toServer.onCompleted();
         System.out.println(username+" is sayin bye.");
 
     }

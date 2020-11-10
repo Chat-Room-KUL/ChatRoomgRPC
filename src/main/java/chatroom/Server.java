@@ -151,7 +151,7 @@ public class Server {
 
 				@Override
 				public void onCompleted() {
-
+					responseObserver.onCompleted();
 				}
 			};
 		}

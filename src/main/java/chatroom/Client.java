@@ -202,6 +202,9 @@ public class Client extends Application{
 	@Override
 	public void start(Stage primaryStage) throws Exception{
 
+		//Making a connection to the server
+		Client client = new Client("localhost", 50050);
+
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("ChatRoomGUI.fxml"));
 		loader.setLocation(getClass().getClassLoader().getResource("ChatRoomGUI.fxml"));
 		Parent root = (Parent)loader.load();
@@ -216,14 +219,12 @@ public class Client extends Application{
 			public void handle(WindowEvent we) {
 				try {
 					controller.deleteMyUsername();
+					client.shutdown();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		});
-
-		//Making a connection to the server
-		Client client = new Client("localhost", 50050);
 
 		controller.setClient(client);
 		client.setController(controller);
