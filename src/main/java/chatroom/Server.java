@@ -1,7 +1,7 @@
 package chatroom;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.io.IOException;
@@ -15,6 +15,8 @@ public class Server {
 	private final int port;
 	private final io.grpc.Server server;
 	private static List<User> onlineUsersList = new ArrayList<>();
+	//String is user name
+	private static HashMap<User, StreamObserver<Message>> onlineUsersObservers = new HashMap<>();
 	
 	public Server(int port) throws IOException {
 		this(ServerBuilder.forPort(port), port);
@@ -65,12 +67,72 @@ public class Server {
 	
 	private static class ChatRoomService extends ChatRoomGrpc.ChatRoomImplBase {
 
+		private User onlineUser = null;
 
-		
+
 		@Override
-		public void sendMessage(Message message, StreamObserver<Empty> responseObserver){
-			responseObserver.onNext(sendMessageToReceiver(message));
-			responseObserver.onCompleted();
+		public StreamObserver<Message> sendMessage(StreamObserver<Message> responseObserver) {
+
+			addUserObeserver(onlineUser, responseObserver);
+
+			return new StreamObserver<Message>() {
+				@Override
+				public void onNext(Message message) {
+					System.out.println("Hier een message ontvangen in de server:" + message.getMessage());
+					//This method is called when a client sends a message to the server
+					switch (message.getType()) {
+						case "Message":
+							if (message.getReceiver().getName().equals("GroupChat")) {
+
+								// Getting an iterator
+								Iterator iterator = onlineUsersObservers.entrySet().iterator();
+
+								while (iterator.hasNext()) {
+									Map.Entry entry = (Map.Entry)iterator.next();
+									StreamObserver<Message> observer = (StreamObserver<Message>) entry.getValue();
+									observer.onNext(message);								}
+
+							}else{
+								User receiver = message.getReceiver();
+								StreamObserver<Message> observer = onlineUsersObservers.get(receiver);
+								observer.onNext(message);
+							}
+							break;
+						case "New User":
+
+							User newUser = message.getSender();
+
+							// Getting an iterator
+							Iterator iterator = onlineUsersObservers.entrySet().iterator();
+
+							while (iterator.hasNext()) {
+								Map.Entry entry = (Map.Entry)iterator.next();
+
+								if(entry.getKey() != newUser){
+									StreamObserver<Message> observer = (StreamObserver<Message>) entry.getValue();
+									observer.onNext(message);
+								}
+
+							}
+
+							break;
+						case "Remove User":
+							break;
+					}
+					}
+
+
+				@Override
+				public void onError(Throwable throwable) {
+					logger.log(Level.SEVERE, "gRPC error", throwable);
+
+				}
+
+				@Override
+				public void onCompleted() {
+
+				}
+			};
 		}
 		
 		@Override
@@ -82,6 +144,7 @@ public class Server {
 		@Override
 		public void removeOnlineUser(User user, StreamObserver<Empty> responseObserver){
 			onlineUsersList.remove(user);
+			onlineUsersObservers.remove(user);
 			responseObserver.onNext(Empty.newBuilder().build());
 			responseObserver.onCompleted();
 		}
@@ -97,10 +160,8 @@ public class Server {
 
 
 
-		private Empty sendMessageToReceiver(Message message){
-			//berichten zenden naar receivers
-
-			return Empty.newBuilder().build();
+		private void addUserObeserver(User user, StreamObserver<Message> observer){
+			onlineUsersObservers.putIfAbsent(user, observer);
 		}
 
 		private UserTaken isUserNameTaken(User user){
@@ -121,6 +182,7 @@ public class Server {
 
 			if(!userNameTaken){
 				onlineUsersList.add(user);
+				onlineUser = user;
 			}
 
 			return usertaken;

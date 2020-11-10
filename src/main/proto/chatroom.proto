@@ -39,7 +39,7 @@ package tutorial;
 // The chatroom service definition
 service ChatRoom{
   // Send a message
-  rpc sendMessage(Message) returns (Empty) {}
+  rpc sendMessage(stream Message) returns (stream Message) {}
   
   // Ask if username exists
   rpc checkIfUserNameIsTaken(User) returns (UserTaken) {}
@@ -53,8 +53,10 @@ service ChatRoom{
 
 // A massage: containing the receiver chat name and the message itself
 message Message{
-  string chatName = 1;
-  string message = 2;
+  string type = 1;
+  User receiver = 2;
+  User sender = 3;
+  string message = 4;
 }
 
 // User containing username

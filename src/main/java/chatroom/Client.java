@@ -3,6 +3,7 @@ package chatroom;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -11,7 +12,9 @@ import java.util.logging.Logger;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -29,6 +32,8 @@ public class Client extends Application{
 	private final ManagedChannel channel;
 	private final ChatRoomBlockingStub blockingStub;
 	private final ChatRoomStub asyncStub;
+	private StreamObserver<Message> streamObserverToServer;
+	private static ClientController controller = null;
 
 	public Client(){
 		channel = null;
@@ -46,30 +51,68 @@ public class Client extends Application{
 		asyncStub = ChatRoomGrpc.newStub(channel);
 	}
 
+	public void setController(ClientController controller){
+		this.controller = controller;
+	}
+
 	public void shutdown() throws InterruptedException {
 		channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
 	}
 	
-	public void sendMessage(String chatName, String message){
-		//info("Calculating sum of {0} and {1}", a, b);
-		
-		//Sum request = Sum.newBuilder().setA(a).setB(b).build();
-		//CalculatorReply reply;
-		/*try{
-			reply = blockingStub.calculateSum(request);
-		} catch (StatusRuntimeException e) {
-			logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-			return;
-		}
-		
-		info("Solution of the {0} + {1} = {2}", a, b, reply.getSolution());
-	*/}
+	public void initializeChat(){
+
+		streamObserverToServer = asyncStub.sendMessage(
+				new StreamObserver<Message>() {
+					@Override
+					public void onNext(Message message) {
+						//When a message from the server arrives this method is called
+						switch (message.getType()) {
+							case "Message":
+								if (message.getReceiver().getName().equals("GroupChat")) {
+									Platform.runLater(new Runnable () {
+										@Override
+										public void run() {
+											controller.addMessageToChatRoom("GroupChat",message.getSender().getName()+": "+message.getMessage());
+										}
+									});
+
+								}else{
+
+								}
+								break;
+						}
+
+					}
+
+					@Override
+					public void onError(Throwable throwable) {
+						logger.log(Level.SEVERE, "gRPC error", throwable);
+						try {
+							shutdown();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+
+					@Override
+					public void onCompleted() {
+						logger.severe("The server closed the connection, shutting down...");
+						try {
+							shutdown();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				});
+	}
 	
 	public boolean checkIfUserNameIsTaken(String userName){
 
 		User request = User.newBuilder().setName(userName).build();
 		UserTaken reply;
 		try{
+			System.out.println("Hier");
+			System.out.println(blockingStub);
 			reply = blockingStub.checkIfUserNameIsTaken(request);
 		} catch (StatusRuntimeException e) {
 			logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
@@ -81,66 +124,6 @@ public class Client extends Application{
 		} else {
 			return false;
 		}
-
-
-		//info("Streaming sum");
-		//final CountDownLatch finishLatch = new CountDownLatch(1);
-		/*StreamObserver<CalculatorReply> responseObserver = new StreamObserver<CalculatorReply>() {
-			@Override
-			public void onNext(CalculatorReply reply) {
-				info("Finished streaming sum. The solution is {0}", reply.getSolution());
-			}
-			
-			@Override
-			public void onError(Throwable t){
-				Status status = Status.fromThrowable(t);
-				logger.log(Level.WARNING, "StreamingSum failed:{0}", status);
-				finishLatch.countDown();
-			}
-			
-			@Override
-			public void onCompleted(){
-				info("Finished StreamingSum");
-				finishLatch.countDown();
-			}
-		};
-		
-		StreamObserver<Sum> requestObserver = asyncStub.streamingSum(responseObserver);
-		try{
-			int a;
-			int b;
-			Sum request;
-			for(int i = 0; i < (operands+1)/2; i++){
-				a = (int)(Math.random() * 10);
-				b = (int)(Math.random() * 10);
-				if(i == ((operands+1)/2-1) && (operands % 2) != 0){
-					b = 0;
-					info("Adding new summand {0}", a);
-				} else
-					info("Adding new summands {0} and {1} ", a, b);
-				
-				request = Sum.newBuilder().setA(a).setB(b).build();
-				
-				requestObserver.onNext(request);
-				
-				Thread.sleep(1000);
-				if (finishLatch.getCount() == 0){
-					// RPC completed or errored before we finished sending.
-					// Sending further request won't error, but they will just be thrown away.
-					return;
-				}
-					
-			}
-		} catch (RuntimeException e){
-			requestObserver.onError(e);
-			throw e;
-		}
-		
-		// Mark the end of requests
-		requestObserver.onCompleted();
-		
-		// Receiving happens asynchronously
-		finishLatch.await(1, TimeUnit.MINUTES);*/
 	}
 	
 	public void removeOnlineUser(String userName){
@@ -187,7 +170,7 @@ public class Client extends Application{
 		primaryStage.setMinWidth(600);
 		primaryStage.setMinHeight(400);
 		primaryStage.show();
-		ClientController controller = loader.getController();
+		controller = loader.getController();
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			public void handle(WindowEvent we) {
 				try {
@@ -202,6 +185,7 @@ public class Client extends Application{
 		Client client = new Client("localhost", 50050);
 
 		controller.setClient(client);
+		client.setController(controller);
 
 		//Username creation and check
 		boolean usernameChosen = false;
@@ -250,6 +234,8 @@ public class Client extends Application{
 		ChatRoom chatroom = new ChatRoom("GroupChat");
 		controller.addChatRoom(chatroom);
 
+		client.initializeChat();
+
 	}
 
 
@@ -261,4 +247,7 @@ public class Client extends Application{
 		logger.log(Level.INFO, msg, params);
 	}
 
+	public StreamObserver<Message> getStreamObserverToServer() {
+		return streamObserverToServer;
+	}
 }
