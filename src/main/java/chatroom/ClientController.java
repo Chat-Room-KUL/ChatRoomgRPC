@@ -78,6 +78,8 @@ public class ClientController implements Observer {
             toServer.onNext(Message.newBuilder().setType("Message").setReceiver(User.newBuilder().setName(currentActiveChatRoom).build()).setSender(User.newBuilder().setName(username).build()).setMessage(message).build());
         }
 
+        messageInput.clear();
+
     }
 
     public void deleteMyUsername() throws InterruptedException {
@@ -129,7 +131,10 @@ public class ClientController implements Observer {
 
         System.out.println(chatroom.toString());
         if(chatName.equals(currentActiveChatRoom)){
-            chatBox.appendText("\n" + message);
+            if(currentActiveChatRoom.equals("GroupChat")&&chatBox.getText().equals("Welcome to the group chat")){
+                chatBox.appendText("\n");
+            }
+            chatBox.appendText(message + "\n");
             int caretPosition = chatBox.caretPositionProperty().get();
             chatBox.positionCaret(caretPosition);
         }
@@ -138,6 +143,35 @@ public class ClientController implements Observer {
 
     public void removeOnlineUser(String name) {
         onlineUsersList.removeOnlineUser(name);
+
+        if(currentActiveChatRoom.equals(name)){
+
+            ChatRoom currentChatRoom = new ChatRoom();
+
+            boolean chatRoomExists = false;
+            int i=0;
+            while(!chatRoomExists&&i!=chatRooms.size()){
+                if(chatRooms.get(i).getChatRoomName().equals(name)){
+                    chatRoomExists = true;
+                    chatRooms.remove(i);
+                }
+                i++;
+            }
+
+            currentActiveChatRoom = "GroupChat";
+
+            chatRoomExists = false;
+            i=0;
+            while(!chatRoomExists&&i!=chatRooms.size()){
+                if(chatRooms.get(i).getChatRoomName().equals(currentActiveChatRoom)){
+                    chatRoomExists = true;
+                    currentChatRoom = chatRooms.get(i);
+                }
+                i++;
+            }
+
+            chatBox.setText(currentChatRoom.toString());
+        }
     }
 
     public void addOnlineUser(String name) {
