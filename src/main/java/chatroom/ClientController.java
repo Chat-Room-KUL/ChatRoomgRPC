@@ -5,10 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 
 import java.io.BufferedReader;
@@ -29,7 +26,7 @@ public class ClientController implements Observer {
     private String currentActiveChatRoom = "GroupChat";
 
     @FXML
-    public Label chatBox;
+    public TextArea chatBox;
 
     @FXML
     public Button sendMessageButton;
@@ -70,9 +67,7 @@ public class ClientController implements Observer {
         onlineUsers.getItems().clear();
         onlineUsers.setItems(items);
         List<String> users = onlineUsersList.getOnlineUsers();
-        for(int i=0;i<users.size();i++){
-            items.add(users.get(i));
-        }
+        items.addAll(users);
     }
 
     public void sendMessage(ActionEvent actionEvent) {
@@ -134,7 +129,9 @@ public class ClientController implements Observer {
 
         System.out.println(chatroom.toString());
         if(chatName.equals(currentActiveChatRoom)){
-            chatBox.setText(chatroom.toString());
+            chatBox.appendText("\n" + message);
+            int caretPosition = chatBox.caretPositionProperty().get();
+            chatBox.positionCaret(caretPosition);
         }
 
     }
