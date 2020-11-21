@@ -15,7 +15,6 @@ public class Server {
 	private final int port;
 	private final io.grpc.Server server;
 	private static List<User> onlineUsersList = new ArrayList<>();
-	//String is user name
 	private static HashMap<User, StreamObserver<Message>> onlineUsersObservers = new HashMap<>();
 	
 	public Server(int port) throws IOException {
@@ -42,27 +41,24 @@ public class Server {
 	      });
 	}
 
-	  /** Stop serving requests and shutdown resources. */
-	  public void stop() {
-	    if (server != null) {
-	      server.shutdown();
-	    }
-	  }
+	// Stop serving requests and shutdown resources.
+	public void stop() {
+        if (server != null) {
+          server.shutdown();
+        }
+      }
 
-	  /**
-	   * Await termination on the main thread since the grpc library uses daemon threads.
-	   */
-	  private void blockUntilShutdown() throws InterruptedException {
-	    if (server != null) {
-	      server.awaitTermination();
-	    }
-	  }
+    // Await termination on the main thread since the grpc library uses daemon threads.
+    private void blockUntilShutdown() throws InterruptedException {
+        if (server != null) {
+          server.awaitTermination();
+        }
+      }
 
 	public static void main(String[] args) throws Exception{
 		Server server = new Server(50050);
 	    server.start();
 	    server.blockUntilShutdown();
-
 	}
 	
 	private static class ChatRoomService extends ChatRoomGrpc.ChatRoomImplBase {

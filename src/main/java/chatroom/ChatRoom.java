@@ -1,3 +1,4 @@
+//Written by Glenn Groothuis
 package chatroom;
 
 import java.util.ArrayList;

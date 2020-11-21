@@ -1,10 +1,9 @@
+//Written by Glenn Groothuis
 package chatroom;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,7 +70,6 @@ public class Client extends Application{
 					@Override
 					public void onNext(Message message) {
 						//When a message from the server arrives this method is called
-						System.out.println("Bericht ontvangen");
 						switch (message.getType()) {
 							case "Message":
 								if (message.getReceiver().getName().equals("GroupChat")) {
@@ -83,7 +81,6 @@ public class Client extends Application{
 									});
 
 								}else{
-									System.out.println("Bericht ontvangen voor private chat");
 									Platform.runLater(new Runnable () {
 										@Override
 										public void run() {
@@ -152,8 +149,6 @@ public class Client extends Application{
 		User request = User.newBuilder().setName(userName).build();
 		UserTaken reply;
 		try{
-			System.out.println("Hier");
-			System.out.println(blockingStub);
 			reply = blockingStub.checkIfUserNameIsTaken(request);
 		} catch (StatusRuntimeException e) {
 			logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
@@ -197,7 +192,6 @@ public class Client extends Application{
 
 		return onlineUsersStringList;
 	}
-
 
 	@Override
 	public void start(Stage primaryStage) throws Exception{
@@ -285,7 +279,6 @@ public class Client extends Application{
 			toServer.onNext(Message.newBuilder().setType("New User").setSender(User.newBuilder().setName(userName).build()).build());
 		}
 	}
-
 
 	public static void main(String[] args) throws InterruptedException {
 		launch(args);
